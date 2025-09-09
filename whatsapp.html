@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>WhatsApp Chat Simulation — Weaver × Customer</title>
+  <style>
+    :root{
+      --bg:#0b141a;           /* app outer bg */
+      --pane:#111b21;         /* chat pane bg */
+      --bubble-me:#005c4b;    /* my (weaver) bubble */
+      --bubble-them:#202c33;  /* customer bubble */
+      --text:#e9edef;         /* primary text */
+      --muted:#8696a0;        /* secondary text */
+      --accent:#34b7f1;       /* read tick blue */
+      --header:#202c33;
+      --input:#2a3942;
+      --link:#53bdeb;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+      display:grid; place-items:center; padding:16px;
+    }
+
+    /* Phone frame */
+    .phone{
+      width:min(420px, 100%);
+      height:min(780px, calc(100vh - 32px));
+      background:var(--pane);
+      border-radius:24px; overflow:hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.04) inset;
+      display:flex; flex-direction:column;
+    }
+
+    /* Header */
+    .topbar{
+      height:64px; background:var(--header);
+      display:flex; align-items:center; gap:12px; padding:10px 12px;
+      border-bottom:1px solid rgba(255,255,255,.04);
+    }
+    .avatar{
+      width:40px; height:40px; border-radius:50%;
+      background:linear-gradient(135deg,#3aafa9,#2b7a78);
+      object-fit:cover;
+    }
+    .title{display:flex; flex-direction:column; min-width:0}
+    .name{font-weight:600}
+    .presence{color:var(--muted); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+
+    /* Messages area */
+    .messages{
+      flex:1; position:relative; overflow:auto; padding:12px; scroll-behavior:smooth;
+      background-image: radial-gradient(rgba(255,255,255,.02) 1px, transparent 1px);
+      background-size: 12px 12px;
+    }
+
+    /* Bubbles */
+    .bubble{ max-width:76%; padding:8px 9px 6px; border-radius:8px; margin:6px 0; position:relative; word-wrap:break-word; }
+    .from-weaver{ background:var(--bubble-me); margin-left:auto; border-top-right-radius:2px; }
+    .from-customer{ background:var(--bubble-them); margin-right:auto; border-top-left-radius:2px; }
+
+    .meta{ display:flex; align-items:center; gap:6px; justify-content:flex-end; color:var(--muted); font-size:11px; margin-top:4px; }
+
+    /* Double-tick icon */
+    .ticks{ width:16px; height:16px; display:inline-block; vertical-align:-2px; }
+    .ticks svg{ width:100%; height:100%; }
+    .ticks.read path{ fill: var(--accent); }
+    .ticks path{ fill: rgba(255,255,255,.6) }
+
+    /* Typing indicator bubble */
+    .typing{ display:inline-flex; gap:4px; align-items:center; }
+    .typing .dot{ width:6px; height:6px; border-radius:50%; background:#cfd7db; opacity:.6; animation: blink 1.2s infinite; }
+    .typing .dot:nth-child(2){ animation-delay:.2s }
+    .typing .dot:nth-child(3){ animation-delay:.4s }
+    @keyframes blink{ 0%,100%{opacity:.3} 50%{opacity:1} }
+
+    /* Media placeholder */
+    .media{
+      width:200px; height:120px; border-radius:8px; overflow:hidden; display:block; background:#24343d; border:1px solid rgba(255,255,255,.06);
+      margin-bottom:6px;
+    }
+    .swatch{ width:100%; height:100%; background: linear-gradient(135deg, #1b3b5a, #274c6b 60%, #e9edef 60%, #e9edef 62%, #1b3b5a 62%); }
+
+    /* Input bar (non-interactive) */
+    .bottombar{
+      background:var(--input); padding:10px 12px; display:flex; align-items:center; gap:8px;
+      border-top:1px solid rgba(255,255,255,.04);
+    }
+    .fake-input{ flex:1; background:#0b141a; color:#6a7882; border:1px solid rgba(255,255,255,.08); border-radius:20px; padding:10px 14px; }
+    .replay{ background:#00a884; border:0; color:#042e22; font-weight:700; padding:8px 12px; border-radius:16px; cursor:pointer; }
+
+    a{ color:var(--link); text-decoration:none }
+    a:hover{ text-decoration:underline }
+
+    /* Small helper badges */
+    .chip{ font-size:11px; color:var(--muted); border:1px solid rgba(255,255,255,.08); padding:3px 6px; border-radius:10px; }
+
+    /* Language overlay */
+    .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:grid; place-items:center; z-index:1000; }
+    .modal{ width:min(420px,92vw); background:var(--pane); border:1px solid rgba(255,255,255,.08); border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,.45);
+      padding:20px 18px; }
+    .modal h2{ margin:0 0 6px; font-size:18px }
+    .modal p { margin:0 0 14px; color:var(--muted) }
+    .lang-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px }
+    .lang-btn{ background:#00a884; color:#042e22; border:0; padding:10px 12px; border-radius:12px; cursor:pointer; font-weight:700 }
+    .lang-btn:nth-child(2){ background:#2a3942; color:#dfe5e8; }
+    .lang-btn:nth-child(3){ background:#274c6b; color:#e7f4ff; }
+
+    /* Audio play button on bubbles */
+    .bubble .content{ display:block; padding-right:26px; }
+    .speak-btn{
+      position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:50%;
+      display:grid; place-items:center; border:none; cursor:pointer; background:transparent;
+      color:rgba(255,255,255,.7);
+    }
+    .speak-btn:hover{ color:#fff; background:rgba(255,255,255,.08); }
+    .speak-btn svg{ width:14px; height:14px; }
+  </style>
+</head>
+<body>
+  <div id="langOverlay" class="overlay" aria-modal="true" role="dialog">
+    <div class="modal">
+      <h2>Select chat language</h2>
+      <p>Choose a language for this conversation.</p>
+      <div class="lang-grid">
+        <button class="lang-btn" data-lang="en">English</button>
+        <button class="lang-btn" data-lang="hi">हिंदी</button>
+        <button class="lang-btn" data-lang="bn">বাংলা</button>
+      </div>
+    </div>
+  </div>
+  <div class="phone" id="phone">
+    <div class="topbar">
+  <img class="avatar" src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Lady_in_Bundi%2C_Rajasthan.JPG/960px-Lady_in_Bundi%2C_Rajasthan.JPG" alt="Asha (Weaver)" />
+      <div class="title">
+        <div class="name">Asha (Weaver)</div>
+        <div id="presence" class="presence">last seen today at <span id="lastSeen">—</span></div>
+      </div>
+      <div style="margin-left:auto" class="chip">Order #TR-091</div>
+    </div>
+
+    <div id="messages" class="messages" aria-live="polite"></div>
+
+    <div class="bottombar">
+      <div class="fake-input">Message</div>
+      <button class="replay" id="replay">Replay</button>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const msgArea = document.getElementById('messages');
+      const presence = document.getElementById('presence');
+      const replayBtn = document.getElementById('replay');
+      const overlay = document.getElementById('langOverlay');
+  const nameEl = document.querySelector('.name');
+  const avatarEl = document.querySelector('.avatar');
+      const orderChip = document.querySelector('.chip');
+      const fakeInput = document.querySelector('.fake-input');
+
+      // Time helpers
+      const start = new Date();
+      function pad(n){ return n.toString().padStart(2,'0'); }
+      function fmtTime(d){ return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+
+      // i18n dictionary
+      const i18n = {
+        en: {
+          weaverName: 'Asha (Weaver)',
+          orderLabel: 'Order #TR-091',
+          typing: 'typing…',
+          online: 'online',
+          lastSeenTodayAt: 'last seen today at {time}',
+          messagePlaceholder: 'Message',
+          replayLabel: 'Replay',
+          swatchAlt: 'Indigo fabric swatch',
+          speakLabel: 'Play audio',
+          messages: [
+            { sender:'weaver', typing:true, text:"Hello! Thanks for reaching out about a custom table runner. I'm Asha, a handloom weaver. How can I help?" },
+            { sender:'customer', text:"Hi Asha! I'd like a 2m runner in indigo with a thin cream border." },
+            { sender:'weaver', typing:true, text:"Lovely choice. 100% cotton works well — plain weave with a selvedge accent. Width 35 cm okay?" },
+            { sender:'customer', text:"Could we do 35 cm exactly, hemmed ends (no fringe)?" },
+            { sender:'weaver', typing:true, text:"Yes, 35 cm hemmed is perfect. I'll share a quick swatch of the indigo shade." },
+            { sender:'weaver', typing:true, media:'swatch', text:"Indigo swatch — close to Pantone 2965C." },
+            { sender:'customer', text:"The color looks great. What's the price and lead time?" },
+            { sender:'weaver', typing:true, text:"Pricing: $42 materials & labor, $6 hemming, $8 tracked shipping. Total $56. Lead time: weave Fri, finish over weekend, ship Mon. ETA 3–5 business days. Sound good?" },
+            { sender:'customer', text:"That's perfect. I can pay the 50% deposit now. Do you take PayPal?" },
+            { sender:'weaver', typing:true, text:"Yes, PayPal is fine. I'll send a payment request to you now." },
+            { sender:'weaver', text:"Payment request sent: https://example.com/pay/TR-091 (secure). Please confirm once paid." },
+            { sender:'customer', text:"Paid just now. Transaction ID ending 8421." },
+            { sender:'weaver', typing:true, text:"Got it — thank you! Loom is free Thu; I'll beam the warp and share a progress photo when weaving starts." },
+            { sender:'weaver', typing:true, text:"Quick update: sampling warp tension now. Final width will be 35 cm as requested." },
+            { sender:'weaver', typing:true, text:"Final update: It's finished 🎉 I'll send final photo and tracking number this afternoon." },
+            { sender:'customer', text:"Amazing — thank you so much!" }
+          ]
+        },
+        hi: {
+          weaverName: 'आशा (बुनकर)',
+          orderLabel: 'ऑर्डर #TR-091',
+          typing: 'टाइप कर रही हैं…',
+          online: 'ऑनलाइन',
+          lastSeenTodayAt: 'आख़िरी बार आज {time} पर देखा',
+          messagePlaceholder: 'संदेश',
+          replayLabel: 'फिर से देखें',
+          swatchAlt: 'इंडिगो फैब्रिक स्वैच',
+          speakLabel: 'ऑडियो चलाएं',
+          messages: [
+            { sender:'weaver', typing:true, text:"नमस्ते! कस्टम टेबल रनर के बारे में संपर्क करने के लिए धन्यवाद। मैं आशा, एक हैंडलूम बुनकर हूँ। मैं कैसे मदद कर सकती हूँ?" },
+            { sender:'customer', text:"हाय आशा! मुझे 2 मीटर का इंडिगो रंग का रनर चाहिए, पतली क्रीम बॉर्डर के साथ।" },
+            { sender:'weaver', typing:true, text:"बहुत अच्छा चुनाव। 100% कॉटन ठीक रहेगा — प्लेन वीव के साथ सेल्वेज़ एक्सेंट। चौड़ाई 35 सेमी ठीक है?" },
+            { sender:'customer', text:"क्या हम 35 सेमी बिल्कुल कर सकते हैं, दोनों सिरों पर हेम (फ्रिंज नहीं)?" },
+            { sender:'weaver', typing:true, text:"हाँ, 35 सेमी हेम्ड बिल्कुल सही है। मैं इंडिगो शेड का एक छोटा स्वैच शेयर करती हूँ।" },
+            { sender:'weaver', typing:true, media:'swatch', text:"इंडिगो स्वैच — Pantone 2965C के क़रीब।" },
+            { sender:'customer', text:"रंग बढ़िया है। कीमत और लीड टाइम क्या होगा?" },
+            { sender:'weaver', typing:true, text:"प्राइसिंग: $42 सामग्री और मेहनताना, $6 हेमिंग, $8 ट्रैक्ड शिपिंग। कुल $56। लीड टाइम: शुक्रवार को बुनाई, वीकेंड में फिनिश, सोमवार को शिप। ETA 3–5 कार्यदिवस। ठीक है?" },
+            { sender:'customer', text:"परफेक्ट। मैं अभी 50% एडवांस दे दूँ? क्या PayPal चलेगा?" },
+            { sender:'weaver', typing:true, text:"हाँ, PayPal ठीक है। मैं आपको अभी पेमेंट रिक्वेस्ट भेजती हूँ।" },
+            { sender:'weaver', text:"पेमेंट रिक्वेस्ट भेजी: https://example.com/pay/TR-091 (सिक्योर)। पेमेंट हो जाए तो बताइए।" },
+            { sender:'customer', text:"अभी भुगतान कर दिया। ट्रांज़ैक्शन आईडी 8421 पर समाप्त।" },
+            { sender:'weaver', typing:true, text:"मिल गया — धन्यवाद! करघा गुरुवार को खाली है; मैं वार्प बीम करूँगी और बुनाई शुरू होते ही प्रोग्रेस फोटो भेजूँगी।" },
+            { sender:'weaver', typing:true, text:"क्विक अपडेट: अभी वार्प टेंशन का सैंपल ले रही हूँ। फाइनल चौड़ाई 35 सेमी ही रहेगी।" },
+            { sender:'weaver', typing:true, text:"फाइनल अपडेट: काम पूरा हो गया 🎉 मैं आज दोपहर फाइनल फोटो और ट्रैकिंग नंबर भेज दूँगी।" },
+            { sender:'customer', text:"कमाल — बहुत बहुत धन्यवाद!" }
+          ]
+        },
+        bn: {
+          weaverName: 'আশা (তাঁতী)',
+          orderLabel: 'অর্ডার #TR-091',
+          typing: 'টাইপ করছেন…',
+          online: 'অনলাইন',
+          lastSeenTodayAt: 'আজ {time} সময় শেষ দেখা',
+          messagePlaceholder: 'বার্তা',
+          replayLabel: 'আবার চালান',
+          swatchAlt: 'ইন্ডিগো কাপড়ের স্যাম্পল',
+          speakLabel: 'অডিও চালান',
+          messages: [
+            { sender:'weaver', typing:true, text:"হ্যালো! কাস্টম টেবিল রানার নিয়ে যোগাযোগ করার জন্য ধন্যবাদ। আমি আশা, হ্যান্ডলুম তাঁতী। কিভাবে সাহায্য করতে পারি?" },
+            { sender:'customer', text:"হাই আশা! ইন্ডিগো রঙে ২ মিটার রানার চাই, পাতলা ক্রিম বর্ডারসহ।" },
+            { sender:'weaver', typing:true, text:"দারুণ পছন্দ। ১০০% কটন ভালো হবে — প্লেইন বুননে সেলভেজ অ্যাকসেন্ট। প্রস্থ ৩৫ সেমি ঠিক আছে?" },
+            { sender:'customer', text:"আমরা কি ঠিক ৩৫ সেমি করতে পারি, দুই মাথায় হেম (ফ্রিঞ্জ নয়)?" },
+            { sender:'weaver', typing:true, text:"হ্যাঁ, ৩৫ সেমি হেমড একদম ঠিক। আমি ইন্ডিগো শেডের একটা ছোট স্যাম্পল শেয়ার করছি।" },
+            { sender:'weaver', typing:true, media:'swatch', text:"ইন্ডিগো স্যাম্পল — Pantone 2965C-র কাছাকাছি।" },
+            { sender:'customer', text:"রঙটা দুর্দান্ত। দাম আর লিড টাইম কত হবে?" },
+            { sender:'weaver', typing:true, text:"প্রাইসিং: $42 উপকরণ ও শ্রম, $6 হেমিং, $8 ট্র্যাকড শিপিং। মোট $56। লিড টাইম: শুক্রবার বুনব, উইকএন্ডে ফিনিশ, সোমবার শিপ। ETA ৩–৫ কর্মদিবস। ঠিক আছে?" },
+            { sender:'customer', text:"পারফেক্ট। আমি এখনই ৫০% অ্যাডভান্স দিতে পারি। আপনি কি PayPal নেন?" },
+            { sender:'weaver', typing:true, text:"হ্যাঁ, PayPal চলবে। আমি এখনই আপনাকে পেমেন্ট রিকোয়েস্ট পাঠাচ্ছি।" },
+            { sender:'weaver', text:"পেমেন্ট রিকোয়েস্ট পাঠানো হয়েছে: https://example.com/pay/TR-091 (সিকিওর)। পেমেন্ট হয়ে গেলে জানাবেন।" },
+            { sender:'customer', text:"এখনই পেমেন্ট করে দিলাম। ট্রানজ্যাকশন আইডির শেষ ৮৪২১।" },
+            { sender:'weaver', typing:true, text:"পেয়েছি — ধন্যবাদ! বৃহস্পতিবার লুম ফাঁকা; ওয়ার্প বীম করছি, বুনন শুরু হলে প্রগ্রেস ছবি দেব।" },
+            { sender:'weaver', typing:true, text:"দ্রুত আপডেট: এখন ওয়ার্প টেনশন স্যাম্পল করছি। চূড়ান্ত প্রস্থ ৩৫ সেমিই থাকবে।" },
+            { sender:'weaver', typing:true, text:"শেষ আপডেট: কাজ শেষ 🎉 আজ বিকেলে ফাইনাল ছবি ও ট্র্যাকিং নম্বর পাঠাব।" },
+            { sender:'customer', text:"চমৎকার — অনেক ধন্যবাদ!" }
+          ]
+        }
+      };
+
+      const state = { lang: 'en' };
+
+      // Presence helpers
+      function setPresenceTyping(){ presence.textContent = i18n[state.lang].typing; }
+      function setPresenceOnline(){ presence.textContent = i18n[state.lang].online; }
+      function setPresenceLastSeen(d){ presence.textContent = i18n[state.lang].lastSeenTodayAt.replace('{time}', fmtTime(d)); }
+
+      // SVG for double ticks
+      const ticksSVG = (read=false) => `
+        <span class="ticks ${read ? 'read' : ''}" aria-label="${read ? 'Read' : 'Delivered'}">
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M6.5 11.5l-2-2-1.4 1.4 3.4 3.4 6.5-6.5-1.4-1.4z"></path>
+            <path d="M12 12l-2-2-1.4 1.4 3.4 3.4 6-6-1.4-1.4z" opacity=".85"></path>
+          </svg>
+        </span>`;
+
+      // Speaker icon SVG
+      const speakerSVG = `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="currentColor" d="M3 10v4h4l5 4V6l-5 4H3zm13.5 2a4.5 4.5 0 00-2.25-3.9v7.8A4.5 4.5 0 0016.5 12zm-2.25-7.32v2.09A7 7 0 0119 12a7 7 0 01-4.75 6.23v2.09A9.02 9.02 0 0021 12c0-4.02-2.64-7.4-6.75-8.32z"/>
+        </svg>`;
+
+      // Create a bubble element
+      function bubble({sender, html, time, read}){
+        const wrap = document.createElement('div');
+        wrap.className = 'bubble ' + (sender === 'weaver' ? 'from-weaver' : 'from-customer');
+        const speakLabel = i18n[state.lang].speakLabel;
+        wrap.innerHTML = `
+          <button class="speak-btn" title="${speakLabel}" aria-label="${speakLabel}">${speakerSVG}</button>
+          <div class="content">${html}</div>
+          <div class="meta"><span>${time}</span>${ticksSVG(sender==='customer' ? true : !!read)}</div>
+        `;
+        return wrap;
+      }
+
+      // Typing indicator bubble
+      function typingBubble(sender){
+        const wrap = document.createElement('div');
+        wrap.className = 'bubble ' + (sender === 'weaver' ? 'from-weaver' : 'from-customer');
+        wrap.innerHTML = `<span class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>`;
+        return wrap;
+      }
+
+      // Scroll helper
+      const scrollToEnd = () => { msgArea.scrollTop = msgArea.scrollHeight; };
+
+      // Simple linkifier for the payment link placeholder
+      function linkify(text){
+        return text
+          .replace(/(https?:\/\/\S+)/g, '<a href="$1" target="_blank" rel="noopener">$1<\/a>')
+          .replace(/\n/g,'<br>');
+      }
+
+      // Conversation per language
+      function getScript(){ return i18n[state.lang].messages; }
+
+      let timers = [];
+      function clearTimers(){ timers.forEach(clearTimeout); timers = []; }
+
+      function play(){
+        msgArea.innerHTML = '';
+        clearTimers();
+  // stop any ongoing speech when replaying
+  if('speechSynthesis' in window){ try { window.speechSynthesis.cancel(); } catch(e){} }
+        const base = new Date();
+        let t = 600;            // initial delay
+        let minuteOffset = 0;   // bump minutes as conversation flows
+
+        const script = getScript();
+
+        script.forEach((step, i) => {
+          const sender = step.sender;
+
+          // Show typing indicator before weaver messages (for realism)
+          if(step.typing){
+            timers.push(setTimeout(() => {
+              setPresenceTyping();
+              const tb = typingBubble(sender);
+              msgArea.appendChild(tb);
+              scrollToEnd();
+              // Remove typing after a short while
+              timers.push(setTimeout(() => {
+                tb.remove();
+                setPresenceOnline();
+              }, 900 + Math.random()*900));
+            }, t));
+            t += 1000 + Math.random()*800; // time spent typing
+          }
+
+          // Schedule real message
+          timers.push(setTimeout(() => {
+            setPresenceOnline();
+            const when = new Date(base.getTime());
+            when.setMinutes(base.getMinutes() + minuteOffset);
+            const time = fmtTime(when);
+
+            let html = '';
+            if(step.media === 'swatch'){
+              html += `<span class="media" role="img" aria-label="${i18n[state.lang].swatchAlt}"><span class="swatch"></span></span>`;
+            }
+            if(step.text){ html += linkify(step.text); }
+
+            const b = bubble({ sender, html, time, read: sender==='weaver' ? false : true });
+            msgArea.appendChild(b);
+            scrollToEnd();
+
+            // After message sent, update presence to last seen time
+            setPresenceLastSeen(new Date());
+          }, t));
+
+          // Increase delay before next step and occasionally bump minutes
+          t += 700 + Math.random()*900;
+          if(i % 2 === 1) minuteOffset += 1; // roughly every exchange, advance the clock
+        });
+
+        // End presence update
+        timers.push(setTimeout(() => {
+          setPresenceLastSeen(new Date());
+        }, t + 400));
+      }
+
+      replayBtn.addEventListener('click', play);
+
+      // --- Speech synthesis ---
+      const langMap = { en: 'en-US', hi: 'hi-IN', bn: 'bn-IN' };
+      let voices = [];
+      function loadVoices(){
+        try { voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : []; } catch(e){ voices = []; }
+      }
+      if('speechSynthesis' in window){
+        loadVoices();
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
+      function pickVoice(lang){
+        if(!voices || !voices.length) return null;
+        const base = lang.split('-')[0];
+        const exact = voices.find(v => (v.lang || '').toLowerCase() === lang.toLowerCase());
+        if(exact) return exact;
+        const byBase = voices.find(v => (v.lang || '').toLowerCase().startsWith(base));
+        return byBase || null;
+      }
+      function speakText(text){
+        if(!('speechSynthesis' in window) || !window.speechSynthesis){ return; }
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        const lang = langMap[state.lang] || 'en-US';
+        u.lang = lang;
+        const voice = pickVoice(lang) || pickVoice(lang.split('-')[0]) || null;
+        if(voice) u.voice = voice;
+        try { window.speechSynthesis.speak(u); } catch(e) { /* no-op */ }
+      }
+
+      // Delegate click on speaker buttons
+      msgArea.addEventListener('click', (e) => {
+        const btn = e.target.closest && e.target.closest('.speak-btn');
+        if(!btn) return;
+        const bubbleEl = btn.closest('.bubble');
+        if(!bubbleEl) return;
+        const content = bubbleEl.querySelector('.content');
+        if(!content) return;
+        const text = content.innerText.replace(/\s+/g,' ').trim();
+        if(text) speakText(text);
+      });
+
+      function applyLocale(){
+        nameEl.textContent = i18n[state.lang].weaverName;
+        orderChip.textContent = i18n[state.lang].orderLabel;
+        fakeInput.textContent = i18n[state.lang].messagePlaceholder;
+        replayBtn.textContent = i18n[state.lang].replayLabel;
+  if(avatarEl) { avatarEl.alt = i18n[state.lang].weaverName; avatarEl.title = i18n[state.lang].weaverName; }
+      }
+
+      function setLocale(lang){
+        if(!i18n[lang]) lang = 'en';
+        state.lang = lang;
+        try { localStorage.setItem('chatLang', lang); } catch(e){}
+        applyLocale();
+        setPresenceLastSeen(start);
+        overlay.style.display = 'none';
+  if('speechSynthesis' in window){ try { window.speechSynthesis.cancel(); } catch(e){} }
+        play();
+      }
+
+      // Bind language buttons
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', () => setLocale(btn.dataset.lang));
+      });
+
+      // Start: use saved language if available, else show overlay
+      (function init(){
+        let saved = null;
+        try { saved = localStorage.getItem('chatLang'); } catch(e){}
+        if(saved && i18n[saved]){
+          setLocale(saved);
+        } else {
+          overlay.style.display = 'grid';
+        }
+      })();
+    })();
+  </script>
+</body>
+</html>
