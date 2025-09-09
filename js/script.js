@@ -73,7 +73,7 @@ const productDatabase = {
         material: 'Pure Silk with Gold Zari',
         dimensions: '6.5 meters length, 1.15 meters width',
         weight: '850 grams',
-        manufacturingDate: 'March 15, 2024',
+        manufacturingDate: 'March 15, 2025',
         // Enhanced product details
         category: 'Traditional Saree',
         subcategory: 'Banarasi Silk',
@@ -82,7 +82,7 @@ const productDatabase = {
         threadCount: '120 threads per inch',
         colors: 'Deep Maroon, Gold, Cream',
         washCare: 'Dry Clean Only',
-        origin: 'Varanasi, Uttar Pradesh',,
+        origin: 'Varanasi, Uttar Pradesh',
         estimatedValue: '₹45,000',
         timeToWeave: '21 days',
         productStory: 'This exquisite Banarasi saree represents centuries of weaving tradition from Varanasi. Each thread tells a story of skilled craftsmanship passed down through generations.',
@@ -98,12 +98,12 @@ const productDatabase = {
         customer: {
             name: 'Priya Sharma',
             orderId: 'ORD-2024-001234',
-            purchaseDate: 'March 20, 2024'
+            purchaseDate: 'March 20, 2025'
         },
         shipment: {
-            orderDate: 'March 20, 2024',
-            shippedDate: 'March 22, 2024',
-            deliveredDate: 'March 25, 2024',
+            orderDate: 'March 20, 2025',
+            shippedDate: 'March 22, 2025',
+            deliveredDate: 'March 25, 2025',
             trackingId: 'RSH2024001234TRK',
             deliveryAddress: 'Mumbai, Maharashtra'
         },
@@ -383,20 +383,52 @@ function downloadCertificate() {
 
     showNotification('Generating certificate...', 'info');
     
-    // Create certificate using jsPDF
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('portrait', 'mm', 'a4');
-    
-    // Set up the certificate
-    generateCertificate(doc, currentProduct);
-    
-    // Download the certificate
-    doc.save(`Resha_Authenticity_Certificate_${currentProduct.id}.pdf`);
-    
-    showNotification('Certificate downloaded successfully!', 'success');
+    // Load QR code image and generate certificate
+    loadImageAsBase64('images/qrcode.png')
+        .then(qrCodeData => {
+            // Create certificate using jsPDF in landscape orientation
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape', 'mm', 'a4');
+            
+            // Generate the certificate with QR code
+            generateCertificate(doc, currentProduct, qrCodeData);
+            
+            // Download the certificate
+            doc.save(`Resha_Authenticity_Certificate_${currentProduct.id}.pdf`);
+            
+            showNotification('Certificate downloaded successfully!', 'success');
+        })
+        .catch(error => {
+            console.warn('QR code image failed to load, generating without QR code:', error);
+            // Generate certificate without QR code as fallback
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape', 'mm', 'a4');
+            generateCertificate(doc, currentProduct, null);
+            doc.save(`Resha_Authenticity_Certificate_${currentProduct.id}.pdf`);
+            showNotification('Certificate downloaded successfully!', 'success');
+        });
 }
 
-function generateCertificate(doc, product) {
+function loadImageAsBase64(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = this.width;
+            canvas.height = this.height;
+            ctx.drawImage(this, 0, 0);
+            const dataURL = canvas.toDataURL('image/png');
+            resolve(dataURL);
+        };
+        img.onerror = reject;
+        img.src = src;
+    });
+}
+
+function generateCertificate(doc, product, qrCodeData) {
+    // Get page dimensions for landscape orientation
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
@@ -404,137 +436,163 @@ function generateCertificate(doc, product) {
     const brandPink = [184, 51, 106];
     const deepPink = [139, 45, 90];
     const darkGray = [44, 44, 44];
+    const lightPink = [248, 241, 244];
     
-    // Add decorative border
-    doc.setLineWidth(3);
+    // Background gradient effect
+    doc.setFillColor(...lightPink);
+    doc.rect(0, 0, pageWidth, pageHeight, 'F');
+    
+    // Decorative borders
+    doc.setLineWidth(5);
     doc.setDrawColor(...brandPink);
-    doc.rect(10, 10, pageWidth - 20, pageHeight - 20);
+    doc.rect(8, 8, pageWidth - 16, pageHeight - 16);
     
     doc.setLineWidth(1);
     doc.setDrawColor(...deepPink);
-    doc.rect(15, 15, pageWidth - 30, pageHeight - 30);
+    doc.rect(16, 16, pageWidth - 32, pageHeight - 32);
     
-    // Header section
-    doc.setFontSize(32);
+    // Header section with ornate design
+    doc.setFontSize(42);
     doc.setTextColor(...brandPink);
     doc.setFont('helvetica', 'bold');
-    doc.text('RESHA', pageWidth / 2, 40, { align: 'center' });
+    doc.text('RESHA', pageWidth / 2, 35, { align: 'center' });
     
+    doc.setFontSize(16);
+    doc.setTextColor(...darkGray);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Heritage Threads - Authentic Handloom Verification', pageWidth / 2, 45, { align: 'center' });
+    
+    // Certificate title with fancy styling
+    doc.setFontSize(28);
+    doc.setTextColor(...deepPink);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CERTIFICATE OF AUTHENTICITY', pageWidth / 2, 65, { align: 'center' });
+    
+    // Subtitle
     doc.setFontSize(14);
     doc.setTextColor(...darkGray);
     doc.setFont('helvetica', 'normal');
-    doc.text('Heritage Threads', pageWidth / 2, 50, { align: 'center' });
+    doc.text('This certifies that the following handloom product is genuine and authentic', pageWidth / 2, 75, { align: 'center' });
     
-    // Certificate title
-    doc.setFontSize(24);
-    doc.setTextColor(...deepPink);
+    // Main content area with two columns
+    const leftColumn = 25;
+    const rightColumn = pageWidth / 2 + 15;
+    let yPos = 95;
+    
+    // Left Column - Product Details
+    doc.setFontSize(16);
+    doc.setTextColor(...brandPink);
     doc.setFont('helvetica', 'bold');
-    doc.text('CERTIFICATE OF AUTHENTICITY', pageWidth / 2, 70, { align: 'center' });
+    doc.text('PRODUCT DETAILS', leftColumn, yPos);
     
-    // Decorative line
+    // Decorative underline
     doc.setLineWidth(2);
     doc.setDrawColor(...brandPink);
-    doc.line(40, 80, pageWidth - 40, 80);
+    doc.line(leftColumn, yPos + 2, leftColumn + 80, yPos + 2);
     
-    // Certificate content
-    doc.setFontSize(12);
+    yPos += 12;
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
     doc.setTextColor(...darkGray);
-    doc.setFont('helvetica', 'normal');
     
-    const certText = `This certificate verifies the authenticity of the handloom product described below:`;
-    doc.text(certText, pageWidth / 2, 100, { align: 'center', maxWidth: pageWidth - 60 });
-    
-    // Product details
-    let yPos = 120;
-    const leftMargin = 30;
-    const rightMargin = pageWidth - 30;
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('PRODUCT DETAILS', pageWidth / 2, yPos, { align: 'center' });
-    yPos += 15;
-    
-    doc.setFont('helvetica', 'normal');
-    const details = [
-        ['Product Name:', product.name],
-        ['Product ID:', product.id],
-        ['Material:', product.material],
-        ['Dimensions:', product.dimensions],
-        ['Weight:', product.weight],
-        ['Manufacturing Date:', product.manufacturingDate]
+    const productDetails = [
+        ['Product Name:', 'Handwoven Silk Saree - Traditional Banarasi'],
+        ['Product ID:', 'RSH-2024-BS-001'],
+        ['Artisan Name:', 'Radha Devi'],
+        ['Manufacturing Date:', 'March 15, 2025']
     ];
     
-    details.forEach(([label, value]) => {
+    productDetails.forEach(([label, value]) => {
         doc.setFont('helvetica', 'bold');
-        doc.text(label, leftMargin, yPos);
+        doc.setTextColor(...deepPink);
+        doc.text(label, leftColumn, yPos);
         doc.setFont('helvetica', 'normal');
-        doc.text(value, leftMargin + 50, yPos);
-        yPos += 8;
+        doc.setTextColor(...darkGray);
+        doc.text(value, leftColumn, yPos + 6);
+        yPos += 18;
     });
     
-    // Artisan details
-    yPos += 10;
+    // Right Column - Customer Details
+    yPos = 95;
+    doc.setFontSize(16);
+    doc.setTextColor(...brandPink);
     doc.setFont('helvetica', 'bold');
-    doc.text('ARTISAN DETAILS', pageWidth / 2, yPos, { align: 'center' });
-    yPos += 15;
+    doc.text('CUSTOMER DETAILS', rightColumn, yPos);
     
-    const artisanDetails = [
-        ['Artisan Name:', product.artisan.name],
-        ['Title:', product.artisan.title],
-        ['Experience:', product.artisan.experience],
-        ['Location:', product.artisan.location]
-    ];
+    // Decorative underline
+    doc.setLineWidth(2);
+    doc.setDrawColor(...brandPink);
+    doc.line(rightColumn, yPos + 2, rightColumn + 80, yPos + 2);
     
-    artisanDetails.forEach(([label, value]) => {
-        doc.setFont('helvetica', 'bold');
-        doc.text(label, leftMargin, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(value, leftMargin + 50, yPos);
-        yPos += 8;
-    });
-    
-    // Customer details
-    yPos += 10;
-    doc.setFont('helvetica', 'bold');
-    doc.text('CUSTOMER DETAILS', pageWidth / 2, yPos, { align: 'center' });
-    yPos += 15;
+    yPos += 12;
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...darkGray);
     
     const customerDetails = [
-        ['Customer Name:', product.customer.name],
-        ['Order ID:', product.customer.orderId],
-        ['Purchase Date:', product.customer.purchaseDate]
+        ['Customer Name:', 'Priya Sharma'],
+        ['Order ID:', 'ORD-2024-001234'],
+        ['Purchase Date:', 'March 20, 2025']
     ];
     
     customerDetails.forEach(([label, value]) => {
         doc.setFont('helvetica', 'bold');
-        doc.text(label, leftMargin, yPos);
+        doc.setTextColor(...deepPink);
+        doc.text(label, rightColumn, yPos);
         doc.setFont('helvetica', 'normal');
-        doc.text(value, leftMargin + 50, yPos);
-        yPos += 8;
+        doc.setTextColor(...darkGray);
+        doc.text(value, rightColumn, yPos + 6);
+        yPos += 18;
     });
     
-    // Footer
-    const footerY = pageHeight - 40;
-    doc.setLineWidth(1);
+    // QR Code area (enhanced)
+    const qrX = pageWidth - 60;
+    const qrY = 90;
     doc.setDrawColor(...brandPink);
-    doc.line(30, footerY - 10, pageWidth - 30, footerY - 10);
+    doc.setFillColor(255, 255, 255);
+    doc.rect(qrX, qrY, 35, 35, 'FD');
+    
+    // Add QR Code image if available
+    if (qrCodeData) {
+        try {
+            doc.addImage(qrCodeData, 'PNG', qrX + 2, qrY + 2, 31, 31);
+        } catch (error) {
+            console.warn('Failed to add QR code image:', error);
+            // Fallback: QR placeholder grid
+            doc.setLineWidth(0.5);
+            doc.setDrawColor(...brandPink);
+            for (let i = 0; i <= 7; i++) {
+                doc.line(qrX + (i * 4), qrY, qrX + (i * 4), qrY + 35);
+                doc.line(qrX, qrY + (i * 4), qrX + 35, qrY + (i * 4));
+            }
+        }
+    } else {
+        // Fallback: QR placeholder grid
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(...brandPink);
+        for (let i = 0; i <= 7; i++) {
+            doc.line(qrX + (i * 4), qrY, qrX + (i * 4), qrY + 35);
+            doc.line(qrX, qrY + (i * 4), qrX + 35, qrY + (i * 4));
+        }
+    }
+    
+    doc.setFontSize(8);
+    doc.setTextColor(...brandPink);
+    doc.text('Scan for', qrX + 17.5, qrY + 40, { align: 'center' });
+    doc.text('Verification', qrX + 17.5, qrY + 47, { align: 'center' });
+    
+    // Footer with decorative elements
+    const footerY = pageHeight - 25;
     
     doc.setFontSize(10);
     doc.setTextColor(...darkGray);
     doc.setFont('helvetica', 'italic');
-    doc.text('This certificate is digitally generated and serves as proof of authenticity for the handloom product.', 
+    doc.text('This certificate is digitally generated and serves as proof of authenticity for this handloom creation.', 
              pageWidth / 2, footerY, { align: 'center' });
     
     doc.setFont('helvetica', 'normal');
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 
-             pageWidth / 2, footerY + 10, { align: 'center' });
-    
-    // QR Code placeholder
-    doc.setDrawColor(...brandPink);
-    doc.setFillColor(248, 241, 244);
-    doc.rect(pageWidth - 60, 20, 40, 40, 'FD');
-    doc.setFontSize(8);
-    doc.setTextColor(...brandPink);
-    doc.text('QR Code', pageWidth - 40, 45, { align: 'center' });
+    doc.text(`Certificate Generated: ${new Date().toLocaleDateString()} | Resha Heritage Threads © 2025`, 
+             pageWidth / 2, footerY + 8, { align: 'center' });
 }
 
 function showNotification(message, type = 'info') {
