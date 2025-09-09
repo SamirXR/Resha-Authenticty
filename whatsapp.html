@@ -83,6 +83,7 @@
       margin-bottom:6px;
     }
     .swatch{ width:100%; height:100%; background: linear-gradient(135deg, #1b3b5a, #274c6b 60%, #e9edef 60%, #e9edef 62%, #1b3b5a 62%); }
+  .media img{ width:100%; height:100%; object-fit:cover; display:block; }
 
     /* Input bar (non-interactive) */
     .bottombar{
@@ -134,7 +135,7 @@
   </div>
   <div class="phone" id="phone">
     <div class="topbar">
-  <img class="avatar" src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Lady_in_Bundi%2C_Rajasthan.JPG/960px-Lady_in_Bundi%2C_Rajasthan.JPG" alt="Asha (Weaver)" />
+  <img class="avatar" src="images/artisans/weaverimage.jpg" alt="Asha (Weaver)" />
       <div class="title">
         <div class="name">Asha (Weaver)</div>
         <div id="presence" class="presence">last seen today at <span id="lastSeen">—</span></div>
@@ -176,7 +177,7 @@
           lastSeenTodayAt: 'last seen today at {time}',
           messagePlaceholder: 'Message',
           replayLabel: 'Replay',
-          swatchAlt: 'Indigo fabric swatch',
+          swatchAlt: 'Product image — indigo shade',
           speakLabel: 'Play audio',
           messages: [
             { sender:'weaver', typing:true, text:"Hello! Thanks for reaching out about a custom table runner. I'm Asha, a handloom weaver. How can I help?" },
@@ -184,9 +185,9 @@
             { sender:'weaver', typing:true, text:"Lovely choice. 100% cotton works well — plain weave with a selvedge accent. Width 35 cm okay?" },
             { sender:'customer', text:"Could we do 35 cm exactly, hemmed ends (no fringe)?" },
             { sender:'weaver', typing:true, text:"Yes, 35 cm hemmed is perfect. I'll share a quick swatch of the indigo shade." },
-            { sender:'weaver', typing:true, media:'swatch', text:"Indigo swatch — close to Pantone 2965C." },
+            { sender:'weaver', typing:true, media:'swatch', text:"Product image — indigo shade." },
             { sender:'customer', text:"The color looks great. What's the price and lead time?" },
-            { sender:'weaver', typing:true, text:"Pricing: $42 materials & labor, $6 hemming, $8 tracked shipping. Total $56. Lead time: weave Fri, finish over weekend, ship Mon. ETA 3–5 business days. Sound good?" },
+            { sender:'weaver', typing:true, text:"Pricing: ₹3,500 materials & labor, ₹500 hemming, ₹700 tracked shipping. Total ₹4,700. Lead time: weave Fri, finish over weekend, ship Mon. ETA 3–5 business days. Sound good?" },
             { sender:'customer', text:"That's perfect. I can pay the 50% deposit now. Do you take PayPal?" },
             { sender:'weaver', typing:true, text:"Yes, PayPal is fine. I'll send a payment request to you now." },
             { sender:'weaver', text:"Payment request sent: https://example.com/pay/TR-091 (secure). Please confirm once paid." },
@@ -205,7 +206,7 @@
           lastSeenTodayAt: 'आख़िरी बार आज {time} पर देखा',
           messagePlaceholder: 'संदेश',
           replayLabel: 'फिर से देखें',
-          swatchAlt: 'इंडिगो फैब्रिक स्वैच',
+          swatchAlt: 'उत्पाद छवि — इंडिगो शेड',
           speakLabel: 'ऑडियो चलाएं',
           messages: [
             { sender:'weaver', typing:true, text:"नमस्ते! कस्टम टेबल रनर के बारे में संपर्क करने के लिए धन्यवाद। मैं आशा, एक हैंडलूम बुनकर हूँ। मैं कैसे मदद कर सकती हूँ?" },
@@ -213,9 +214,9 @@
             { sender:'weaver', typing:true, text:"बहुत अच्छा चुनाव। 100% कॉटन ठीक रहेगा — प्लेन वीव के साथ सेल्वेज़ एक्सेंट। चौड़ाई 35 सेमी ठीक है?" },
             { sender:'customer', text:"क्या हम 35 सेमी बिल्कुल कर सकते हैं, दोनों सिरों पर हेम (फ्रिंज नहीं)?" },
             { sender:'weaver', typing:true, text:"हाँ, 35 सेमी हेम्ड बिल्कुल सही है। मैं इंडिगो शेड का एक छोटा स्वैच शेयर करती हूँ।" },
-            { sender:'weaver', typing:true, media:'swatch', text:"इंडिगो स्वैच — Pantone 2965C के क़रीब।" },
+            { sender:'weaver', typing:true, media:'swatch', text:"उत्पाद छवि — इंडिगो शेड।" },
             { sender:'customer', text:"रंग बढ़िया है। कीमत और लीड टाइम क्या होगा?" },
-            { sender:'weaver', typing:true, text:"प्राइसिंग: $42 सामग्री और मेहनताना, $6 हेमिंग, $8 ट्रैक्ड शिपिंग। कुल $56। लीड टाइम: शुक्रवार को बुनाई, वीकेंड में फिनिश, सोमवार को शिप। ETA 3–5 कार्यदिवस। ठीक है?" },
+            { sender:'weaver', typing:true, text:"प्राइसिंग: ₹3,500 सामग्री व मेहनताना, ₹500 हेमिंग, ₹700 ट्रैक्ड शिपिंग। कुल ₹4,700। लीड टाइम: शुक्रवार को बुनाई, वीकेंड में फिनिश, सोमवार को शिप। ETA 3–5 कार्यदिवस। ठीक है?" },
             { sender:'customer', text:"परफेक्ट। मैं अभी 50% एडवांस दे दूँ? क्या PayPal चलेगा?" },
             { sender:'weaver', typing:true, text:"हाँ, PayPal ठीक है। मैं आपको अभी पेमेंट रिक्वेस्ट भेजती हूँ।" },
             { sender:'weaver', text:"पेमेंट रिक्वेस्ट भेजी: https://example.com/pay/TR-091 (सिक्योर)। पेमेंट हो जाए तो बताइए।" },
@@ -234,7 +235,7 @@
           lastSeenTodayAt: 'আজ {time} সময় শেষ দেখা',
           messagePlaceholder: 'বার্তা',
           replayLabel: 'আবার চালান',
-          swatchAlt: 'ইন্ডিগো কাপড়ের স্যাম্পল',
+          swatchAlt: 'পণ্যের ছবি — ইন্ডিগো শেড',
           speakLabel: 'অডিও চালান',
           messages: [
             { sender:'weaver', typing:true, text:"হ্যালো! কাস্টম টেবিল রানার নিয়ে যোগাযোগ করার জন্য ধন্যবাদ। আমি আশা, হ্যান্ডলুম তাঁতী। কিভাবে সাহায্য করতে পারি?" },
@@ -242,9 +243,9 @@
             { sender:'weaver', typing:true, text:"দারুণ পছন্দ। ১০০% কটন ভালো হবে — প্লেইন বুননে সেলভেজ অ্যাকসেন্ট। প্রস্থ ৩৫ সেমি ঠিক আছে?" },
             { sender:'customer', text:"আমরা কি ঠিক ৩৫ সেমি করতে পারি, দুই মাথায় হেম (ফ্রিঞ্জ নয়)?" },
             { sender:'weaver', typing:true, text:"হ্যাঁ, ৩৫ সেমি হেমড একদম ঠিক। আমি ইন্ডিগো শেডের একটা ছোট স্যাম্পল শেয়ার করছি।" },
-            { sender:'weaver', typing:true, media:'swatch', text:"ইন্ডিগো স্যাম্পল — Pantone 2965C-র কাছাকাছি।" },
+            { sender:'weaver', typing:true, media:'swatch', text:"পণ্যের ছবি — ইন্ডিগো শেড।" },
             { sender:'customer', text:"রঙটা দুর্দান্ত। দাম আর লিড টাইম কত হবে?" },
-            { sender:'weaver', typing:true, text:"প্রাইসিং: $42 উপকরণ ও শ্রম, $6 হেমিং, $8 ট্র্যাকড শিপিং। মোট $56। লিড টাইম: শুক্রবার বুনব, উইকএন্ডে ফিনিশ, সোমবার শিপ। ETA ৩–৫ কর্মদিবস। ঠিক আছে?" },
+            { sender:'weaver', typing:true, text:"প্রাইসিং: ₹৩,৫০০ উপকরণ ও শ্রম, ₹৫০০ হেমিং, ₹৭০০ ট্র্যাকড শিপিং। মোট ₹৪,৭০০। লিড টাইম: শুক্রবার বুনব, উইকএন্ডে ফিনিশ, সোমবার শিপ। ETA ৩–৫ কর্মদিবস। ঠিক আছে?" },
             { sender:'customer', text:"পারফেক্ট। আমি এখনই ৫০% অ্যাডভান্স দিতে পারি। আপনি কি PayPal নেন?" },
             { sender:'weaver', typing:true, text:"হ্যাঁ, PayPal চলবে। আমি এখনই আপনাকে পেমেন্ট রিকোয়েস্ট পাঠাচ্ছি।" },
             { sender:'weaver', text:"পেমেন্ট রিকোয়েস্ট পাঠানো হয়েছে: https://example.com/pay/TR-091 (সিকিওর)। পেমেন্ট হয়ে গেলে জানাবেন।" },
@@ -355,7 +356,7 @@
 
             let html = '';
             if(step.media === 'swatch'){
-              html += `<span class="media" role="img" aria-label="${i18n[state.lang].swatchAlt}"><span class="swatch"></span></span>`;
+              html += `<span class="media" role="img" aria-label="${i18n[state.lang].swatchAlt}"><img src="images/producitonimage.png" alt="${i18n[state.lang].swatchAlt}"></span>`;
             }
             if(step.text){ html += linkify(step.text); }
 
