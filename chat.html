@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resha - Blockchain Chat | Artisan ↔ Customer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --brand-pink: #b8336a;
+            --deep-pink: #8b2d5a;
+            --light-pink: #f8f1f4;
+            --text-dark: #2c2c2c;
+            --bg-dark: #1a1a2e;
+            --bg-darker: #16213e;
+            --blockchain-blue: #0066ff;
+            --ethereum-purple: #6b4ce6;
+            --nft-green: #00d395;
+            --success-green: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark), var(--bg-darker));
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Role Selection Modal */
+        .role-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .role-modal-content {
+            background: linear-gradient(135deg, var(--bg-darker), var(--bg-dark));
+            border: 2px solid rgba(107, 76, 230, 0.3);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.4s ease;
+        }
+
+        .role-modal h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--blockchain-blue), var(--ethereum-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .role-modal p {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 2rem;
+        }
+
+        .role-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .role-card {
+            background: linear-gradient(135deg, rgba(107, 76, 230, 0.1), rgba(0, 102, 255, 0.1));
+            border: 2px solid rgba(107, 76, 230, 0.3);
+            border-radius: 16px;
+            padding: 2rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .role-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--ethereum-purple);
+            box-shadow: 0 10px 30px rgba(107, 76, 230, 0.3);
+        }
+
+        .role-card.selected {
+            background: linear-gradient(135deg, var(--ethereum-purple), var(--blockchain-blue));
+            border-color: var(--nft-green);
+        }
+
+        .role-card i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--ethereum-purple);
+        }
+
+        .role-card.selected i {
+            color: #fff;
+        }
+
+        .role-card h4 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .role-card p {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin: 0;
+        }
+
+        .role-card.selected p {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .btn-join {
+            background: linear-gradient(135deg, var(--ethereum-purple), var(--blockchain-blue));
+            border: none;
+            color: #fff;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-join:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(107, 76, 230, 0.4);
+        }
+
+        .btn-join:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Main Chat Container */
+        .chat-container {
+            display: none;
+            height: 100vh;
+            position: relative;
+        }
+
+        .chat-container.active {
+            display: flex;
+        }
+
+        /* Blockchain Visualization Sidebar */
+        .blockchain-sidebar {
+            width: 320px;
+            background: rgba(26, 26, 46, 0.95);
+            border-right: 2px solid rgba(107, 76, 230, 0.2);
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .blockchain-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(107, 76, 230, 0.2);
+        }
+
+        .blockchain-header i {
+            color: var(--ethereum-purple);
+            font-size: 1.5rem;
+        }
+
+        .blockchain-header h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .blockchain-card {
+            background: linear-gradient(135deg, rgba(107, 76, 230, 0.1), rgba(0, 102, 255, 0.05));
+            border: 1px solid rgba(107, 76, 230, 0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            animation: fadeInLeft 0.5s ease;
+        }
+
+        .blockchain-card h4 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--ethereum-purple);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .blockchain-card p {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0.5rem 0;
+            line-height: 1.5;
+        }
+
+        .blockchain-card code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: var(--nft-green);
+            word-break: break-all;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.pending {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+
+        .status-badge.confirmed {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success-green);
+        }
+
+        .status-badge.minting {
+            background: rgba(0, 211, 149, 0.2);
+            color: var(--nft-green);
+        }
+
+        .network-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .network-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .gas-fee {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(107, 76, 230, 0.2);
+        }
+
+        .gas-fee span:first-child {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.7rem;
+        }
+
+        .gas-fee span:last-child {
+            color: var(--ethereum-purple);
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        /* Main Chat Area */
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-dark);
+        }
+
+        .chat-header {
+            background: rgba(26, 26, 46, 0.95);
+            border-bottom: 2px solid rgba(107, 76, 230, 0.2);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .chat-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--ethereum-purple), var(--blockchain-blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            border: 2px solid var(--nft-green);
+        }
+
+        .chat-info h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .chat-info p {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin: 0;
+        }
+
+        .online-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .online-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success-green);
+        }
+
+        .chat-header-right {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success-green);
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .connection-status.disconnected {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+        }
+
+        /* Messages Area */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            display: flex;
+            gap: 1rem;
+            animation: fadeInMessage 0.3s ease;
+            max-width: 70%;
+        }
+
+        .message.own {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--ethereum-purple), var(--blockchain-blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1rem;
+        }
+
+        .message-content {
+            flex: 1;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .message-bubble {
+            background: rgba(107, 76, 230, 0.15);
+            border: 1px solid rgba(107, 76, 230, 0.3);
+            padding: 1rem;
+            border-radius: 12px;
+            border-top-left-radius: 4px;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+
+        .message.own .message-bubble {
+            background: linear-gradient(135deg, rgba(107, 76, 230, 0.3), rgba(0, 102, 255, 0.3));
+            border-top-left-radius: 12px;
+            border-top-right-radius: 4px;
+        }
+
+        .blockchain-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(0, 211, 149, 0.15);
+            border: 1px solid var(--nft-green);
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            color: var(--nft-green);
+        }
+
+        .blockchain-tag i {
+            font-size: 0.9rem;
+        }
+
+        /* System Messages */
+        .system-message {
+            align-self: center;
+            background: rgba(107, 76, 230, 0.1);
+            border: 1px solid rgba(107, 76, 230, 0.3);
+            padding: 0.75rem 1.5rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            max-width: 80%;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+
+        .typing-indicator .message-avatar {
+            width: 30px;
+            height: 30px;
+            font-size: 0.8rem;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 0.3rem;
+            padding: 0.75rem 1rem;
+            background: rgba(107, 76, 230, 0.15);
+            border-radius: 20px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--ethereum-purple);
+            animation: typingBounce 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.7; }
+            30% { transform: translateY(-10px); opacity: 1; }
+        }
+
+        /* Input Area */
+        .chat-input-area {
+            background: rgba(26, 26, 46, 0.95);
+            border-top: 2px solid rgba(107, 76, 230, 0.2);
+            padding: 1.5rem;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        .input-group-custom {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-features {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .feature-btn {
+            background: rgba(107, 76, 230, 0.1);
+            border: 1px solid rgba(107, 76, 230, 0.3);
+            color: rgba(255, 255, 255, 0.7);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .feature-btn:hover {
+            background: rgba(107, 76, 230, 0.2);
+            border-color: var(--ethereum-purple);
+        }
+
+        .feature-btn.active {
+            background: linear-gradient(135deg, var(--ethereum-purple), var(--blockchain-blue));
+            border-color: var(--nft-green);
+            color: #fff;
+        }
+
+        .message-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(107, 76, 230, 0.3);
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            resize: none;
+            min-height: 60px;
+            max-height: 150px;
+            font-family: inherit;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: var(--ethereum-purple);
+            box-shadow: 0 0 0 3px rgba(107, 76, 230, 0.2);
+        }
+
+        .message-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-send {
+            background: linear-gradient(135deg, var(--ethereum-purple), var(--blockchain-blue));
+            border: none;
+            color: #fff;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            height: fit-content;
+        }
+
+        .btn-send:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(107, 76, 230, 0.4);
+        }
+
+        .btn-send:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInMessage {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(107, 76, 230, 0.5);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(107, 76, 230, 0.7);
+        }
+
+        /* Language Selector */
+        .language-selector {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .lang-toggle-btn {
+            background: linear-gradient(135deg, var(--ethereum-purple), var(--blockchain-blue));
+            border: 2px solid var(--nft-green);
+            color: #fff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(107, 76, 230, 0.3);
+        }
+
+        .lang-toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(107, 76, 230, 0.4);
+        }
+
+        .lang-dropdown {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: rgba(26, 26, 46, 0.98);
+            border: 2px solid rgba(107, 76, 230, 0.3);
+            border-radius: 12px;
+            padding: 0.5rem;
+            min-width: 200px;
+            display: none;
+            flex-direction: column;
+            gap: 0.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            animation: slideDown 0.3s ease;
+        }
+
+        .lang-dropdown.active {
+            display: flex;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .lang-option {
+            background: rgba(107, 76, 230, 0.1);
+            border: 1px solid rgba(107, 76, 230, 0.3);
+            color: #fff;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        .lang-option:hover {
+            background: rgba(107, 76, 230, 0.2);
+            border-color: var(--ethereum-purple);
+        }
+
+        .lang-option.active {
+            background: linear-gradient(135deg, var(--ethereum-purple), var(--blockchain-blue));
+            border-color: var(--nft-green);
+        }
+
+        /* Audio Button */
+        .audio-btn {
+            background: rgba(0, 211, 149, 0.15);
+            border: 1px solid var(--nft-green);
+            color: var(--nft-green);
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+
+        .audio-btn:hover {
+            background: rgba(0, 211, 149, 0.25);
+            transform: scale(1.1);
+        }
+
+        .audio-btn.playing {
+            background: var(--nft-green);
+            color: #fff;
+            animation: audioPulse 1s infinite;
+        }
+
+        @keyframes audioPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .message-bubble {
+            background: rgba(107, 76, 230, 0.15);
+            border: 1px solid rgba(107, 76, 230, 0.3);
+            padding: 1rem;
+            border-radius: 12px;
+            border-top-left-radius: 4px;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.6;
+            word-wrap: break-word;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .message-text {
+            flex: 1;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .blockchain-sidebar {
+                width: 280px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .blockchain-sidebar {
+                display: none;
+            }
+
+            .message {
+                max-width: 85%;
+            }
+
+            .role-options {
+                grid-template-columns: 1fr;
+            }
+
+            .input-features {
+                flex-wrap: wrap;
+            }
+
+            .language-selector {
+                top: 10px;
+                right: 10px;
+            }
+
+            .lang-toggle-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Role Selection Modal -->
+    <div id="roleModal" class="role-modal">
+        <div class="role-modal-content">
+            <h2><i class="fas fa-link"></i> Join Blockchain Chat</h2>
+            <p>Connect securely via Ethereum network. Select your role to begin.</p>
+            
+            <div class="role-options">
+                <div class="role-card" data-role="artisan" data-name="Asha">
+                    <i class="fas fa-hand-sparkles"></i>
+                    <h4>Artisan</h4>
+                    <p>Handloom Creator</p>
+                </div>
+                <div class="role-card" data-role="customer" data-name="Priya">
+                    <i class="fas fa-shopping-bag"></i>
+                    <h4>Customer</h4>
+                    <p>Product Buyer</p>
+                </div>
+            </div>
+
+            <button class="btn-join" id="joinBtn" disabled>
+                <i class="fas fa-sign-in-alt"></i> Connect to Network
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Chat Container -->
+    <div id="chatContainer" class="chat-container">
+        <!-- Blockchain Visualization Sidebar -->
+        <div class="blockchain-sidebar">
+            <div class="blockchain-header">
+                <i class="fab fa-ethereum"></i>
+                <h3>Blockchain Activity</h3>
+            </div>
+
+            <div id="blockchainActivity">
+                <!-- Dynamic blockchain cards will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="chat-main">
+            <div class="chat-header">
+                <div class="chat-header-left">
+                    <div class="chat-avatar">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="chat-info">
+                        <h3>Artisan ↔ Customer Chat</h3>
+                        <div class="online-indicator">
+                            <span class="online-dot"></span>
+                            <p id="onlineUsers">Connecting...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-header-right">
+                    <div class="connection-status" id="connectionStatus">
+                        <i class="fas fa-circle"></i>
+                        <span>Connected</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="messages-area" id="messagesArea">
+                <!-- Messages will be dynamically added here -->
+            </div>
+
+            <div class="chat-input-area">
+                <div class="input-wrapper">
+                    <div class="input-group-custom">
+                        <div class="input-features">
+                            <button class="feature-btn" id="nftBtn" title="Tag as NFT">
+                                <i class="fas fa-image"></i> NFT
+                            </button>
+                            <button class="feature-btn" id="contractBtn" title="Smart Contract">
+                                <i class="fas fa-file-contract"></i> Contract
+                            </button>
+                            <button class="feature-btn" id="paymentBtn" title="Payment">
+                                <i class="fab fa-ethereum"></i> Payment
+                            </button>
+                        </div>
+                        <textarea 
+                            class="message-input" 
+                            id="messageInput" 
+                            placeholder="Type your message... (Press Enter to send)"
+                            rows="1"
+                        ></textarea>
+                    </div>
+                    <button class="btn-send" id="sendBtn">
+                        <i class="fas fa-paper-plane"></i>
+                        Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Language Selector Floating Button -->
+    <div id="langSelector" class="language-selector">
+        <button class="lang-toggle-btn" id="langToggleBtn">
+            <i class="fas fa-language"></i>
+            <span id="currentLang">English</span>
+        </button>
+        <div class="lang-dropdown" id="langDropdown">
+            <button class="lang-option" data-lang="en">English</button>
+            <button class="lang-option" data-lang="hi">हिंदी (Hindi)</button>
+            <button class="lang-option" data-lang="bn">বাংলা (Bengali)</button>
+            <button class="lang-option" data-lang="ta">தமிழ் (Tamil)</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        // Translation Dictionary
+        const translations = {
+            en: {
+                welcome: "Welcome! You joined as",
+                connected: "Connected to Ethereum Network: Sepolia Testnet",
+                messages: [
+                    { role: 'customer', text: "Hello! Thanks for connecting. I'd like a custom table runner in indigo with a thin cream border.", tags: [] },
+                    { role: 'artisan', text: "Hello! Thanks for reaching out. I'm Asha, a handloom weaver. I'd love to help! What length are you looking for?", tags: [] },
+                    { role: 'customer', text: "I need a 2 meter runner. Can you do 100% cotton with plain weave?", tags: [] },
+                    { role: 'artisan', text: "Absolutely! 100% cotton works beautifully. Plain weave with selvedge accent. Width 35 cm okay?", tags: [] },
+                    { role: 'customer', text: "Perfect! Could we do hemmed ends instead of fringe?", tags: [] },
+                    { role: 'artisan', text: "Yes, 35 cm hemmed is perfect. Let me share a quick swatch of the indigo shade I have.", tags: [] },
+                    { role: 'customer', text: "The color looks great! What's the pricing and timeline?", tags: [] },
+                    { role: 'artisan', text: "Pricing: ₹3,500 materials & labor, ₹500 hemming, ₹700 tracked shipping. Total ₹4,700. I'll weave Friday, finish over weekend, ship Monday. ETA 3-5 days.", tags: ['payment'] },
+                    { role: 'customer', text: "That's perfect timing! I can pay 50% deposit now. Do you accept crypto?", tags: [] },
+                    { role: 'artisan', text: "Yes! I accept ETH payments. I'll create a smart contract for this order with all details - price, timeline, and specifications.", tags: ['contract', 'payment'] },
+                    { role: 'customer', text: "Excellent! How do I verify authenticity when it arrives?", tags: [] },
+                    { role: 'artisan', text: "Each piece comes with a blockchain-verified NFT certificate showing the complete journey - from loom to your home. You'll get the certificate once work is complete.", tags: ['nft'] },
+                    { role: 'customer', text: "Amazing! This is exactly what I was looking for. Let's proceed!", tags: [] },
+                    { role: 'artisan', text: "Wonderful! I'll send you the smart contract now. Once you confirm the deposit, I'll beam the warp and start weaving. I'll share progress photos!", tags: ['contract'] }
+                ]
+            },
+            hi: {
+                welcome: "स्वागत है! आपने यह भूमिका चुनी",
+                connected: "Ethereum Network से जुड़े: Sepolia Testnet",
+                messages: [
+                    { role: 'customer', text: "नमस्ते! कनेक्ट करने के लिए धन्यवाद। मुझे इंडिगो रंग में एक कस्टम टेबल रनर चाहिए जिसमें पतली क्रीम बॉर्डर हो।", tags: [] },
+                    { role: 'artisan', text: "नमस्ते! संपर्क करने के लिए धन्यवाद। मैं आशा हूं, एक हैंडलूम बुनकर। मुझे मदद करने में खुशी होगी! आपको कौन सी लंबाई चाहिए?", tags: [] },
+                    { role: 'customer', text: "मुझे 2 मीटर का रनर चाहिए। क्या आप 100% कॉटन में प्लेन वीव कर सकते हैं?", tags: [] },
+                    { role: 'artisan', text: "बिल्कुल! 100% कॉटन बहुत अच्छा रहता है। प्लेन वीव के साथ सेल्वेज एक्सेंट। चौड़ाई 35 सेमी ठीक है?", tags: [] },
+                    { role: 'customer', text: "परफेक्ट! क्या हम फ्रिंज की जगह हेम्ड एंड्स कर सकते हैं?", tags: [] },
+                    { role: 'artisan', text: "हां, 35 सेमी हेम्ड बिल्कुल सही है। मैं आपको इंडिगो शेड का एक छोटा स्वैच दिखाती हूं।", tags: [] },
+                    { role: 'customer', text: "रंग बहुत अच्छा लग रहा है! कीमत और समय क्या होगा?", tags: [] },
+                    { role: 'artisan', text: "प्राइसिंग: ₹3,500 सामग्री व मेहनताना, ₹500 हेमिंग, ₹700 ट्रैक्ड शिपिंग। कुल ₹4,700। मैं शुक्रवार को बुनूंगी, वीकेंड में फिनिश करूंगी, सोमवार को शिप करूंगी। 3-5 दिन में पहुंच जाएगा।", tags: ['payment'] },
+                    { role: 'customer', text: "यह परफेक्ट टाइमिंग है! मैं अभी 50% एडवांस दे सकता हूं। क्या आप क्रिप्टो लेते हैं?", tags: [] },
+                    { role: 'artisan', text: "हां! मैं ETH पेमेंट स्वीकार करती हूं। मैं इस ऑर्डर के लिए सभी विवरणों के साथ एक स्मार्ट कॉन्ट्रैक्ट बनाऊंगी - कीमत, समय और स्पेसिफिकेशन।", tags: ['contract', 'payment'] },
+                    { role: 'customer', text: "बढ़िया! जब यह आएगा तो मैं प्रामाणिकता कैसे वेरिफाई करूं?", tags: [] },
+                    { role: 'artisan', text: "हर टुकड़े के साथ एक ब्लॉकचेन-वेरिफाइड NFT सर्टिफिकेट आता है जो पूरी यात्रा दिखाता है - करघे से आपके घर तक। काम पूरा होने पर आपको सर्टिफिकेट मिल जाएगा।", tags: ['nft'] },
+                    { role: 'customer', text: "कमाल है! यही तो मुझे चाहिए था। चलिए आगे बढ़ते हैं!", tags: [] },
+                    { role: 'artisan', text: "वंडरफुल! मैं आपको अभी स्मार्ट कॉन्ट्रैक्ट भेजती हूं। एक बार आप डिपॉजिट कन्फर्म करें, मैं वार्प बीम करूंगी और बुनाई शुरू करूंगी। मैं प्रोग्रेस फोटो भी शेयर करूंगी!", tags: ['contract'] }
+                ]
+            },
+            bn: {
+                welcome: "স্বাগতম! আপনি এই ভূমিকায় যোগ দিয়েছেন",
+                connected: "Ethereum Network এ সংযুক্ত: Sepolia Testnet",
+                messages: [
+                    { role: 'customer', text: "হ্যালো! সংযুক্ত হওয়ার জন্য ধন্যবাদ। আমার ইন্ডিগো রঙে একটি কাস্টম টেবিল রানার চাই যাতে পাতলা ক্রিম বর্ডার থাকবে।", tags: [] },
+                    { role: 'artisan', text: "হ্যালো! যোগাযোগ করার জন্য ধন্যবাদ। আমি আশা, একজন হ্যান্ডলুম তাঁতী। আমি সাহায্য করতে পেরে খুশি হব! আপনি কত দৈর্ঘ্য চান?", tags: [] },
+                    { role: 'customer', text: "আমার ২ মিটার রানার দরকার। আপনি কি প্লেইন বুননে ১০০% তুলা করতে পারেন?", tags: [] },
+                    { role: 'artisan', text: "অবশ্যই! ১০০% তুলা খুব সুন্দর হয়। সেলভেজ অ্যাকসেন্ট সহ প্লেইন বুনন। প্রস্থ ৩৫ সেমি ঠিক আছে?", tags: [] },
+                    { role: 'customer', text: "পারফেক্ট! আমরা কি ফ্রিঞ্জের পরিবর্তে হেমড প্রান্ত করতে পারি?", tags: [] },
+                    { role: 'artisan', text: "হ্যাঁ, ৩৫ সেমি হেমড একদম ঠিক। আমি আপনাকে ইন্ডিগো শেডের একটা ছোট নমুনা দেখাচ্ছি।", tags: [] },
+                    { role: 'customer', text: "রঙটা দারুণ দেখাচ্ছে! দাম এবং সময়সীমা কত?", tags: [] },
+                    { role: 'artisan', text: "প্রাইসিং: ₹৩,৫০০ উপকরণ ও শ্রম, ₹৫০০ হেমিং, ₹৭০০ ট্র্যাকড শিপিং। মোট ₹৪,৭০০। আমি শুক্রবার বুনব, উইকএন্ডে শেষ করব, সোমবার শিপ করব। ৩-৫ দিনে পৌঁছে যাবে।", tags: ['payment'] },
+                    { role: 'customer', text: "এটা পারফেক্ট টাইমিং! আমি এখনই ৫০% আগাম দিতে পারি। আপনি কি ক্রিপ্টো নেন?", tags: [] },
+                    { role: 'artisan', text: "হ্যাঁ! আমি ETH পেমেন্ট গ্রহণ করি। আমি এই অর্ডারের জন্য সমস্ত বিবরণ সহ একটি স্মার্ট কন্ট্র্যাক্ট তৈরি করব - মূল্য, সময়রেখা এবং স্পেসিফিকেশন।", tags: ['contract', 'payment'] },
+                    { role: 'customer', text: "চমৎকার! যখন এটি আসবে তখন আমি সত্যতা কীভাবে যাচাই করব?", tags: [] },
+                    { role: 'artisan', text: "প্রতিটি অংশের সাথে একটি ব্লকচেইন-যাচাইকৃত NFT সার্টিফিকেট আসে যা সম্পূর্ণ যাত্রা দেখায় - তাঁত থেকে আপনার বাড়ি পর্যন্ত। কাজ শেষ হলে আপনি সার্টিফিকেট পাবেন।", tags: ['nft'] },
+                    { role: 'customer', text: "অসাধারণ! আমি ঠিক এটাই খুঁজছিলাম। চলুন এগিয়ে যাই!", tags: [] },
+                    { role: 'artisan', text: "দুর্দান্ত! আমি এখনই আপনাকে স্মার্ট কন্ট্র্যাক্ট পাঠাচ্ছি। একবার আপনি জমা নিশ্চিত করলে, আমি ওয়ার্প বীম করব এবং বুনন শুরু করব। আমি প্রগ্রেস ফটোও শেয়ার করব!", tags: ['contract'] }
+                ]
+            },
+            ta: {
+                welcome: "வரவேற்கிறோம்! நீங்கள் இந்த பாத்திரத்தில் சேர்ந்துள்ளீர்கள்",
+                connected: "Ethereum Network உடன் இணைக்கப்பட்டது: Sepolia Testnet",
+                messages: [
+                    { role: 'customer', text: "வணக்கம்! இணைப்பதற்கு நன்றி। எனக்கு இண்டிகோ நிறத்தில் ஒரு தனிப்பயன் டேபிள் ரன்னர் வேண்டும், அதில் மெல்லிய க்ரீம் பார்டர் இருக்க வேண்டும்.", tags: [] },
+                    { role: 'artisan', text: "வணக்கம்! தொடர்பு கொண்டதற்கு நன்றி. நான் ஆஷா, ஒரு கைத்தறி நெசவாளர். உதவுவதில் மகிழ்ச்சி! எவ்வளவு நீளம் வேண்டும்?", tags: [] },
+                    { role: 'customer', text: "எனக்கு 2 மீட்டர் ரன்னர் தேவை. நீங்கள் 100% பருத்தியில் பிளைன் வீவ் செய்ய முடியுமா?", tags: [] },
+                    { role: 'artisan', text: "நிச்சயமாக! 100% பருத்தி மிகவும் அழகாக இருக்கும். செல்வெட்ஜ் ஆக்சென்ட்டுடன் பிளைன் வீவ். அகலம் 35 செமீ சரியா?", tags: [] },
+                    { role: 'customer', text: "பர்ஃபெக்ட்! ஃபிரிஞ்சுக்கு பதிலாக ஹெம்ட் எண்ட்ஸ் செய்ய முடியுமா?", tags: [] },
+                    { role: 'artisan', text: "ஆமாம், 35 செமீ ஹெம்ட் பர்ஃபெக்ட். நான் உங்களுக்கு இண்டிகோ ஷேடின் ஒரு சிறிய மாதிரியை காட்டுகிறேன்.", tags: [] },
+                    { role: 'customer', text: "நிறம் அருமையாக இருக்கிறது! விலை மற்றும் காலவரிசை என்ன?", tags: [] },
+                    { role: 'artisan', text: "ப்ரைசிங்: ₹3,500 பொருட்கள் மற்றும் உழைப்பு, ₹500 ஹெம்மிங், ₹700 ட்ராக்ட் ஷிப்பிங். மொத்தம் ₹4,700. நான் வெள்ளிக்கிழமை நெசவு செய்வேன், வார இறுதியில் முடிப்பேன், திங்கட்கிழமை அனுப்புவேன். 3-5 நாட்களில் வந்துவிடும்.", tags: ['payment'] },
+                    { role: 'customer', text: "இது பர்ஃபெக்ட் டைமிங்! நான் இப்போதே 50% முன்பணம் கொடுக்க முடியும். நீங்கள் கிரிப்டோ எடுக்கிறீர்களா?", tags: [] },
+                    { role: 'artisan', text: "ஆமாம்! நான் ETH பேமெண்ட் ஏற்றுக்கொள்கிறேன். இந்த ஆர்டருக்கு அனைத்து விவரங்களுடனும் ஒரு ஸ்மார்ட் கான்ட்ராக்ட் உருவாக்குவேன் - விலை, காலவரிசை மற்றும் ஸ்பெசிஃபிகேஷன்.", tags: ['contract', 'payment'] },
+                    { role: 'customer', text: "அருமை! அது வரும்போது நான் நம்பகத்தன்மையை எவ்வாறு சரிபார்ப்பது?", tags: [] },
+                    { role: 'artisan', text: "ஒவ்வொரு பகுதியும் முழு பயணத்தையும் காட்டும் blockchain-சரிபார்க்கப்பட்ட NFT சான்றிதழுடன் வருகிறது - தறியிலிருந்து உங்கள் வீடு வரை. வேலை முடிந்ததும் சான்றிதழ் கிடைக்கும்.", tags: ['nft'] },
+                    { role: 'customer', text: "அற்புதம்! இதைத்தான் நான் தேடிக்கொண்டிருந்தேன். முன்னேறுவோம்!", tags: [] },
+                    { role: 'artisan', text: "அருமை! நான் உங்களுக்கு இப்போதே ஸ்மார்ட் கான்ட்ராக்ட் அனுப்புகிறேன். ஒருமுறை நீங்கள் டெபாசிட் உறுதிப்படுத்தினால், நான் வார்ப் பீம் செய்து நெசவு தொடங்குவேன். நான் ப்ராக்ரஸ் ஃபோட்டோக்களையும் பகிர்வேன்!", tags: ['contract'] }
+                ]
+            }
+        };
+
+        // Simulated Socket.IO connection (works without backend server)
+        class SimulatedSocket {
+            constructor() {
+                this.handlers = {};
+                this.connected = true;
+                this.id = 'sim_' + Math.random().toString(36).substr(2, 9);
+                this.messageStore = {}; // Store messages by language
+            }
+
+            on(event, callback) {
+                if (!this.handlers[event]) {
+                    this.handlers[event] = [];
+                }
+                this.handlers[event].push(callback);
+            }
+
+            emit(event, data) {
+                console.log('Emitting:', event, data);
+                
+                // Simulate server responses
+                setTimeout(() => {
+                    if (event === 'join') {
+                        this.trigger('user_joined', {
+                            userId: this.id,
+                            name: data.name,
+                            role: data.role,
+                            timestamp: Date.now()
+                        });
+                        
+                        // Simulate other user already online
+                        const otherRole = data.role === 'artisan' ? 'customer' : 'artisan';
+                        const otherName = otherRole === 'artisan' ? 'Asha' : 'Priya';
+                        this.trigger('user_list', {
+                            users: [
+                                { id: this.id, name: data.name, role: data.role },
+                                { id: 'other_user', name: otherName, role: otherRole }
+                            ]
+                        });
+                    } else if (event === 'message') {
+                        // Broadcast to all users (including sender for local storage)
+                        this.trigger('message', {
+                            ...data,
+                            userId: this.id,
+                            timestamp: Date.now()
+                        });
+                        
+                        // Simulate blockchain event
+                        this.triggerBlockchainEvent(data);
+                    }
+                }, 100);
+            }
+
+            trigger(event, data) {
+                if (this.handlers[event]) {
+                    this.handlers[event].forEach(callback => callback(data));
+                }
+            }
+
+            triggerBlockchainEvent(data) {
+                setTimeout(() => {
+                    const events = [];
+                    
+                    if (data.tags && data.tags.includes('nft')) {
+                        events.push({
+                            type: 'nft',
+                            title: 'NFT Minting Initiated',
+                            description: 'Creating digital certificate for handloom product',
+                            hash: '0x' + Math.random().toString(16).substr(2, 40),
+                            status: 'minting',
+                            gasUsed: (Math.random() * 0.05 + 0.001).toFixed(6)
+                        });
+                    }
+                    
+                    if (data.tags && data.tags.includes('contract')) {
+                        events.push({
+                            type: 'contract',
+                            title: 'Smart Contract Deployed',
+                            description: 'Order agreement deployed on Ethereum',
+                            hash: '0x' + Math.random().toString(16).substr(2, 40),
+                            status: 'confirmed',
+                            gasUsed: (Math.random() * 0.1 + 0.002).toFixed(6)
+                        });
+                    }
+                    
+                    if (data.tags && data.tags.includes('payment')) {
+                        events.push({
+                            type: 'payment',
+                            title: 'Payment Transaction',
+                            description: 'ETH transfer processed successfully',
+                            hash: '0x' + Math.random().toString(16).substr(2, 40),
+                            status: 'confirmed',
+                            gasUsed: (Math.random() * 0.03 + 0.001).toFixed(6)
+                        });
+                    }
+                    
+                    if (events.length === 0) {
+                        events.push({
+                            type: 'message',
+                            title: 'Message Encrypted',
+                            description: 'End-to-end encryption via blockchain',
+                            hash: '0x' + Math.random().toString(16).substr(2, 40),
+                            status: 'confirmed',
+                            gasUsed: (Math.random() * 0.001 + 0.0001).toFixed(6)
+                        });
+                    }
+                    
+                    events.forEach(event => {
+                        this.trigger('blockchain_event', event);
+                    });
+                }, 500);
+            }
+        }
+
+        // Initialize app
+        const socket = new SimulatedSocket();
+        let currentUser = null;
+        let activeFeatures = [];
+        let typingTimeout = null;
+        let currentLanguage = 'en';
+        let allMessages = []; // Store all messages
+
+        // DOM Elements
+        const roleModal = document.getElementById('roleModal');
+        const roleCards = document.querySelectorAll('.role-card');
+        const joinBtn = document.getElementById('joinBtn');
+        const chatContainer = document.getElementById('chatContainer');
+        const messagesArea = document.getElementById('messagesArea');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const nftBtn = document.getElementById('nftBtn');
+        const contractBtn = document.getElementById('contractBtn');
+        const paymentBtn = document.getElementById('paymentBtn');
+        const blockchainActivity = document.getElementById('blockchainActivity');
+        const onlineUsers = document.getElementById('onlineUsers');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const langToggleBtn = document.getElementById('langToggleBtn');
+        const langDropdown = document.getElementById('langDropdown');
+        const langOptions = document.querySelectorAll('.lang-option');
+        const currentLangSpan = document.getElementById('currentLang');
+
+        // Role Selection
+        let selectedRole = null;
+        let selectedName = null;
+        
+        roleCards.forEach(card => {
+            card.addEventListener('click', () => {
+                roleCards.forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedRole = card.dataset.role;
+                selectedName = card.dataset.name;
+                joinBtn.disabled = false;
+            });
+        });
+
+        // Join Chat
+        joinBtn.addEventListener('click', () => {
+            if (selectedRole && selectedName) {
+                currentUser = {
+                    id: socket.id,
+                    name: selectedName,
+                    role: selectedRole
+                };
+                
+                socket.emit('join', currentUser);
+                roleModal.style.display = 'none';
+                chatContainer.classList.add('active');
+                
+                addSystemMessage(`${translations[currentLanguage].welcome} ${selectedRole}.`);
+                addSystemMessage(translations[currentLanguage].connected);
+                
+                // Load default conversation
+                loadDefaultConversation();
+            }
+        });
+
+        // Feature Buttons
+        function toggleFeature(feature, btn) {
+            const index = activeFeatures.indexOf(feature);
+            if (index > -1) {
+                activeFeatures.splice(index, 1);
+                btn.classList.remove('active');
+            } else {
+                activeFeatures.push(feature);
+                btn.classList.add('active');
+            }
+        }
+
+        nftBtn.addEventListener('click', () => toggleFeature('nft', nftBtn));
+        contractBtn.addEventListener('click', () => toggleFeature('contract', contractBtn));
+        paymentBtn.addEventListener('click', () => toggleFeature('payment', paymentBtn));
+
+        // Send Message
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message && currentUser) {
+                socket.emit('message', {
+                    name: currentUser.name,
+                    role: currentUser.role,
+                    message: message,
+                    tags: [...activeFeatures]
+                });
+                
+                messageInput.value = '';
+                messageInput.style.height = 'auto';
+                activeFeatures = [];
+                nftBtn.classList.remove('active');
+                contractBtn.classList.remove('active');
+                paymentBtn.classList.remove('active');
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Auto-resize textarea
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+
+        // Socket Events
+        socket.on('user_joined', (data) => {
+            addSystemMessage(`${data.name} joined as ${data.role}`);
+        });
+
+        socket.on('user_list', (data) => {
+            const count = data.users.length;
+            onlineUsers.textContent = `${count} user${count !== 1 ? 's' : ''} online`;
+        });
+
+        socket.on('message', (data) => {
+            allMessages.push(data);
+            addMessage(data);
+        });
+
+        socket.on('typing', (data) => {
+            if (data.userId !== socket.id) {
+                showTypingIndicator(data);
+            }
+        });
+
+        socket.on('stop_typing', (data) => {
+            hideTypingIndicator();
+        });
+
+        socket.on('blockchain_event', (data) => {
+            addBlockchainCard(data);
+        });
+
+        // Language Selector
+        langToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            langDropdown.classList.toggle('active');
+        });
+
+        document.addEventListener('click', () => {
+            langDropdown.classList.remove('active');
+        });
+
+        langOptions.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const lang = option.dataset.lang;
+                changeLanguage(lang);
+                langDropdown.classList.remove('active');
+            });
+        });
+
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            const langNames = {
+                en: 'English',
+                hi: 'हिंदी',
+                bn: 'বাংলা',
+                ta: 'தமிழ்'
+            };
+            currentLangSpan.textContent = langNames[lang];
+            
+            // Update active state
+            langOptions.forEach(opt => {
+                opt.classList.toggle('active', opt.dataset.lang === lang);
+            });
+            
+            // Reload messages in new language
+            reloadMessages();
+        }
+
+        function loadDefaultConversation() {
+            const defaultMessages = translations[currentLanguage].messages;
+            
+            defaultMessages.forEach((msg, index) => {
+                setTimeout(() => {
+                    const messageData = {
+                        userId: msg.role === currentUser.role ? socket.id : 'other_user',
+                        name: msg.role === 'artisan' ? 'Asha' : 'Priya',
+                        role: msg.role,
+                        message: msg.text,
+                        tags: msg.tags,
+                        timestamp: Date.now() - (defaultMessages.length - index) * 120000, // 2 min intervals
+                        isDefault: true
+                    };
+                    
+                    allMessages.push(messageData);
+                    addMessage(messageData);
+                    
+                    // Trigger blockchain events for tagged messages
+                    if (msg.tags.length > 0) {
+                        socket.triggerBlockchainEvent(messageData);
+                    }
+                }, index * 100);
+            });
+        }
+
+        function reloadMessages() {
+            // Clear messages area except system messages
+            const systemMessages = Array.from(messagesArea.children).filter(
+                child => child.classList.contains('system-message')
+            );
+            messagesArea.innerHTML = '';
+            
+            // Re-add system messages
+            systemMessages.forEach(msg => {
+                msg.querySelector('i').nextSibling.textContent = 
+                    msg.textContent.includes('Welcome') || msg.textContent.includes('स्वागत') || msg.textContent.includes('স্বাগতম') || msg.textContent.includes('வரவேற்கிறோம்')
+                        ? ` ${translations[currentLanguage].welcome} ${currentUser.role}.`
+                        : ` ${translations[currentLanguage].connected}`;
+                messagesArea.appendChild(msg);
+            });
+            
+            // Reload default conversation in new language
+            const defaultMessages = translations[currentLanguage].messages;
+            const userMessages = allMessages.filter(msg => !msg.isDefault);
+            
+            // Clear and reload with translated defaults
+            allMessages = [];
+            
+            defaultMessages.forEach((msg, index) => {
+                const messageData = {
+                    userId: msg.role === currentUser.role ? socket.id : 'other_user',
+                    name: msg.role === 'artisan' ? 'Asha' : 'Priya',
+                    role: msg.role,
+                    message: msg.text,
+                    tags: msg.tags,
+                    timestamp: Date.now() - (defaultMessages.length + userMessages.length - index) * 120000,
+                    isDefault: true
+                };
+                
+                allMessages.push(messageData);
+                addMessage(messageData);
+            });
+            
+            // Re-add user messages
+            userMessages.forEach(msg => {
+                allMessages.push(msg);
+                addMessage(msg);
+            });
+        }
+
+        // UI Functions
+        function addSystemMessage(text) {
+            const div = document.createElement('div');
+            div.className = 'system-message';
+            div.innerHTML = `<i class="fas fa-info-circle"></i> ${text}`;
+            messagesArea.appendChild(div);
+            scrollToBottom();
+        }
+
+        function addMessage(data) {
+            const isOwn = data.userId === socket.id;
+            const div = document.createElement('div');
+            div.className = `message ${isOwn ? 'own' : ''}`;
+            
+            const avatar = data.role === 'artisan' 
+                ? '<i class="fas fa-hand-sparkles"></i>' 
+                : '<i class="fas fa-shopping-bag"></i>';
+            
+            const time = new Date(data.timestamp).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            let tagsHtml = '';
+            if (data.tags && data.tags.length > 0) {
+                tagsHtml = '<div>';
+                data.tags.forEach(tag => {
+                    const icons = {
+                        nft: 'fa-image',
+                        contract: 'fa-file-contract',
+                        payment: 'fa-coins'
+                    };
+                    tagsHtml += `<span class="blockchain-tag"><i class="fas ${icons[tag]}"></i> ${tag.toUpperCase()}</span> `;
+                });
+                tagsHtml += '</div>';
+            }
+            
+            const audioId = 'audio_' + Date.now() + '_' + Math.random();
+            
+            div.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-sender">${data.name}</span>
+                        <span class="message-time">${time}</span>
+                    </div>
+                    <div class="message-bubble">
+                        <div class="message-text">${escapeHtml(data.message)}</div>
+                        <button class="audio-btn" data-text="${escapeHtml(data.message)}" data-id="${audioId}" title="Play audio">
+                            <i class="fas fa-volume-up"></i>
+                        </button>
+                    </div>
+                    ${tagsHtml}
+                </div>
+            `;
+            
+            // Add audio event listener
+            const audioBtn = div.querySelector('.audio-btn');
+            audioBtn.addEventListener('click', function() {
+                playAudio(this.dataset.text, this.dataset.id, this);
+            });
+            
+            messagesArea.appendChild(div);
+            scrollToBottom();
+        }
+
+        function showTypingIndicator(data) {
+            hideTypingIndicator();
+            const div = document.createElement('div');
+            div.id = 'typingIndicator';
+            div.className = 'typing-indicator';
+            
+            const avatar = data.role === 'artisan' 
+                ? '<i class="fas fa-hand-sparkles"></i>' 
+                : '<i class="fas fa-shopping-bag"></i>';
+            
+            div.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            
+            messagesArea.appendChild(div);
+            scrollToBottom();
+        }
+
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        function addBlockchainCard(data) {
+            const div = document.createElement('div');
+            div.className = 'blockchain-card';
+            
+            const icons = {
+                nft: 'fa-image',
+                contract: 'fa-file-contract',
+                payment: 'fa-coins',
+                message: 'fa-lock'
+            };
+            
+            div.innerHTML = `
+                <h4>
+                    <i class="fas ${icons[data.type] || 'fa-cube'}"></i>
+                    ${data.title}
+                </h4>
+                <p>${data.description}</p>
+                <code>${data.hash.substr(0, 20)}...${data.hash.substr(-8)}</code>
+                <div class="network-info">
+                    <span class="network-indicator"></span>
+                    <span>Sepolia Testnet</span>
+                </div>
+                <div class="gas-fee">
+                    <span>Gas Used</span>
+                    <span>${data.gasUsed} ETH</span>
+                </div>
+                <span class="status-badge ${data.status}">${data.status}</span>
+            `;
+            
+            blockchainActivity.insertBefore(div, blockchainActivity.firstChild);
+            
+            // Keep only last 10 cards
+            while (blockchainActivity.children.length > 10) {
+                blockchainActivity.removeChild(blockchainActivity.lastChild);
+            }
+        }
+
+        function scrollToBottom() {
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Text-to-Speech functionality
+        function playAudio(text, audioId, btnElement) {
+            if ('speechSynthesis' in window) {
+                // Cancel any ongoing speech
+                window.speechSynthesis.cancel();
+                
+                // Remove playing class from all buttons
+                document.querySelectorAll('.audio-btn').forEach(btn => {
+                    btn.classList.remove('playing');
+                });
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                // Set language based on current selection
+                const langCodes = {
+                    en: 'en-US',
+                    hi: 'hi-IN',
+                    bn: 'bn-IN',
+                    ta: 'ta-IN'
+                };
+                utterance.lang = langCodes[currentLanguage] || 'en-US';
+                
+                // Try to find appropriate voice
+                const voices = window.speechSynthesis.getVoices();
+                const langVoice = voices.find(voice => voice.lang.startsWith(currentLanguage));
+                if (langVoice) {
+                    utterance.voice = langVoice;
+                }
+                
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                
+                // Add playing class
+                btnElement.classList.add('playing');
+                
+                utterance.onend = () => {
+                    btnElement.classList.remove('playing');
+                };
+                
+                utterance.onerror = () => {
+                    btnElement.classList.remove('playing');
+                };
+                
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert('Text-to-speech is not supported in your browser.');
+            }
+        }
+
+        // Load voices when they become available
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
+        }
+
+        // Initial blockchain activity
+        setTimeout(() => {
+            addBlockchainCard({
+                type: 'contract',
+                title: 'Network Connected',
+                description: 'Connected to Ethereum Sepolia Testnet',
+                hash: '0x' + Math.random().toString(16).substr(2, 40),
+                status: 'confirmed',
+                gasUsed: '0.0000'
+            });
+        }, 1000);
+    </script>
+</body>
+</html>
